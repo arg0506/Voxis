@@ -1,0 +1,6 @@
+{
+  "name": "Voxis",
+  "description": "Verifiable, Private & Trustless Governance Platform for Modern Organizations and Startup Ecosystems.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

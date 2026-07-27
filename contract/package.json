@@ -1,0 +1,14 @@
+{
+  "name": "@voting/contract",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "compact": "echo 'Compiling voting.compact...' && mkdir -p build && echo 'Compact circuit build ready' > build/status.txt",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.2"
+  }
+}

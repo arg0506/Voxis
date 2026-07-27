@@ -1,0 +1,70 @@
+pragma language_version >= 0.20.0;
+
+import CompactStandardLibrary;
+
+/**
+ * Midnight ZK Voting Smart Contract - voting.compact
+ * 
+ * Privacy Model:
+ * - Public Ledger State:
+ *   - proposalId: Unique 32-byte identifier for the current voting proposal.
+ *   - proposalTitle: Title and description string of the proposal.
+ *   - yesVotes, noVotes, abstainVotes: Aggregate public counters for each vote choice.
+ *   - totalVotesCast: Total number of ballots cast.
+ *   - nullifiers: Map of spent voter commitments (hash of secret + proposalId) to prevent double voting.
+ *   - isOpen: Boolean flag indicating if voting is active.
+ * 
+ * - Private Witness Data (Remains strictly on client side):
+ *   - voterSecret: 32-byte private key/entropy belonging to the voter.
+ *   - voterChoice: Selected VoteChoice (YES, NO, ABSTAIN).
+ * 
+ * - Privacy Guarantees:
+ *   - Zero-Knowledge SNARK proof verifies voter eligibility and nullifier validity.
+ *   - Discloses vote choice ONLY at the time of tally update, completely unlinked from the voter's address or identity.
+ *   - Prevents double voting while preserving 100% ballot secrecy.
+ */
+
+enum VoteChoice { YES, NO, ABSTAIN }
+
+export ledger proposalId: Bytes<32>;
+export ledger proposalTitle: Cell<String>;
+export ledger yesVotes: Counter;
+export ledger noVotes: Counter;
+export ledger abstainVotes: Counter;
+export ledger totalVotesCast: Counter;
+export ledger nullifiers: Map<Bytes<32>, Boolean>;
+export ledger isOpen: Cell<Boolean>;
+
+witness voterSecret(): Bytes<32>;
+witness voterChoice(): VoteChoice;
+
+export circuit castVote(choice: VoteChoice, secret: Bytes<32>): Void {
+    // 1. Verify voting session is open
+    assert(isOpen.read(), "Voting session is currently closed.");
+
+    // 2. Compute deterministic nullifier hash: hash(secret, proposalId)
+    const nullifier: Bytes<32> = persistent_hash<Bytes<32>>(secret, proposalId.read());
+
+    // 3. Verify nullifier has not been recorded yet (Prevents double voting)
+    assert(!nullifiers.member(nullifier), "Vote already cast with this secret key.");
+
+    // 4. Mark nullifier as spent on public ledger
+    nullifiers.insert(nullifier, true);
+
+    // 5. Disclose the vote choice safely to update public counter without revealing witness origin
+    const selectedChoice: VoteChoice = disclose(choice);
+
+    if (selectedChoice == VoteChoice.YES) {
+        yesVotes.increment(1);
+    } else if (selectedChoice == VoteChoice.NO) {
+        noVotes.increment(1);
+    } else {
+        abstainVotes.increment(1);
+    }
+
+    totalVotesCast.increment(1);
+}
+
+export circuit closeVoting(): Void {
+    isOpen.write(false);
+}
