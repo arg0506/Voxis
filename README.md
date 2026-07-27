@@ -22,7 +22,7 @@ Secure • Anonymous • Verifiable • Decentralized
 ### 🏠 Landing Page
 
 <p align="center">
-<img src=".src/assets/images/landingpage" width="100%">
+<img src=".src/assets/images/landingpage.png" width="100%">
 </p>
 
 A modern landing page introducing Voxis, its privacy-first governance model, and Midnight-powered zero-knowledge voting.
