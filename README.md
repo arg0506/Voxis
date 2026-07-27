@@ -32,7 +32,7 @@ A modern landing page introducing Voxis, its privacy-first governance model, and
 
 ### Zero-Knowledge Governance for the Future of Web3
 
-*A decentralized voting platform where ballots remain private while election results remain publicly verifiable.*
+Voxis is a privacy-preserving decentralized voting platform built on the Midnight Network using Compact Zero-Knowledge smart contracts. It enables anonymous, verifiable, and tamper-resistant governance by allowing users to cast confidential votes while keeping election results publicly auditable. Through client-side witness execution and cryptographic proof verification, Voxis ensures ballot secrecy, prevents double voting, and delivers transparent on-chain vote tallying without exposing voter identities or individual choices.
 
 </div>
 
