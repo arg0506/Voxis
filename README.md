@@ -22,80 +22,13 @@ Secure • Anonymous • Verifiable • Decentralized
 ### 🏠 Landing Page
 
 <p align="center">
-<img src="./assets/screenshots/landing-page.png" width="100%">
+<img src=".Voxis-main/src/assets/images/Screenshot 2026-07-27 143048.png" width="100%">
 </p>
 
 A modern landing page introducing Voxis, its privacy-first governance model, and Midnight-powered zero-knowledge voting.
 
 ---
 
-### 📊 Proposal Dashboard
-
-<p align="center">
-<img src="./assets/screenshots/dashboard.png" width="100%">
-</p>
-
-Browse active proposals, monitor voting status, and view proposal metadata through a clean governance dashboard.
-
----
-
-### 🗳 Vote Casting Interface
-
-<p align="center">
-<img src="./assets/screenshots/voting.png" width="100%">
-</p>
-
-Cast anonymous votes using Zero-Knowledge proofs with an intuitive voting experience.
-
----
-
-### 🔐 ZK Proof Generation
-
-<p align="center">
-<img src="./assets/screenshots/proof-generation.png" width="100%">
-</p>
-
-Generate witness data locally, produce cryptographic proofs, and submit private transactions securely.
-
----
-
-### 📈 Analytics Dashboard
-
-<p align="center">
-<img src="./assets/screenshots/analytics.png" width="100%">
-</p>
-
-Interactive charts displaying proposal participation, vote distribution, and public ledger statistics.
-
----
-
-### 🔍 Audit Trail
-
-<p align="center">
-<img src="./assets/screenshots/audit-log.png" width="100%">
-</p>
-
-Inspect transaction history, spent nullifiers, verification status, and blockchain events.
-
----
-
-### 📱 Responsive Mobile View
-
-<p align="center">
-<img src="./assets/screenshots/mobile.png" width="35%">
-</p>
-
-Fully responsive interface optimized for desktop, tablet, and mobile devices.
-
----
-
-### 🌙 Dark Mode
-
-<p align="center">
-<img src="./assets/screenshots/dark-mode.png" width="100%">
-</p>
-
-Modern dark interface designed for extended governance sessions.
 
 ### Zero-Knowledge Governance for the Future of Web3
 
@@ -305,7 +238,17 @@ voxis/
 ├── README.md
 │
 └── package.json
+
 ```
+# 🚀 Deployment
+
+| Service | URL | Status |
+|---------|-----|--------|
+| 🌐 Live Application | https://voxis-plum.vercel.app/ | ✅ Online |
+| 📂 GitHub Repository | https://github.com/arg0506/Voxis | ✅ Public |
+| 🔗 Smart Contract | Pending | 🚧 Deploying |
+| 🌙 Midnight Network | Preprod | ✅ Active |
+
 
 ---
 
@@ -314,7 +257,7 @@ voxis/
 ## Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/voxis.git
+git clone https://github.com/arg0506/voxis.git
 
 cd voxis
 ```
@@ -377,27 +320,28 @@ midnight-proof-server
 
 # 📸 Screenshots
 
-## Dashboard
+## Architectural Flow
 
-> Add screenshot here
+<p align="center">
+<img src=".Voxis-main/src/assets/images/Screenshot 2026-07-27 144715.png" width="100%">
+</p>
 
 ---
 
 ## Vote Casting
 
-> Add screenshot here
+<p align="center">
+<img src=".Voxis-main/src/assets/images/Screenshot 2026-07-27 143205.png" width="100%">
+</p>
 
 ---
 
-## Analytics
-
-> Add screenshot here
-
----
 
 ## Navigation
+<p align="center">
+<img src=".Voxis-main/src/assets/Screenshot 2026-07-27 144634.png" width="100%">
+</p>
 
-> Add screenshot here
 
 ---
 
