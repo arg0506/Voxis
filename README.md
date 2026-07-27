@@ -22,7 +22,7 @@ Secure • Anonymous • Verifiable • Decentralized
 ### 🏠 Landing Page
 
 <p align="center">
-<img src=".Voxis-main/src/assets/images/Screenshot 2026-07-27 143048.png" width="100%">
+<img src="src/assets/images/landingpage.png" width="100%">
 </p>
 
 A modern landing page introducing Voxis, its privacy-first governance model, and Midnight-powered zero-knowledge voting.
@@ -323,7 +323,7 @@ midnight-proof-server
 ## Architectural Flow
 
 <p align="center">
-<img src=".Voxis-main/src/assets/images/Screenshot 2026-07-27 144715.png" width="100%">
+<img src="src/assets/images/aflow.png" width="100%">
 </p>
 
 ---
@@ -331,7 +331,7 @@ midnight-proof-server
 ## Vote Casting
 
 <p align="center">
-<img src=".Voxis-main/src/assets/images/Screenshot 2026-07-27 143205.png" width="100%">
+<img src="src/assets/images/votingsys.png" width="100%">
 </p>
 
 ---
@@ -339,7 +339,7 @@ midnight-proof-server
 
 ## Navigation
 <p align="center">
-<img src=".Voxis-main/src/assets/Screenshot 2026-07-27 144634.png" width="100%">
+<img src="src/assets/dashboard.png" width="100%">
 </p>
 
 
