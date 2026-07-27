@@ -246,7 +246,7 @@ voxis/
 |---------|-----|--------|
 | 🌐 Live Application | https://voxis-plum.vercel.app/ | ✅ Online |
 | 📂 GitHub Repository | https://github.com/arg0506/Voxis | ✅ Public |
-| 🔗 Smart Contract | Pending | 🚧 Deploying |
+| 🔗 Contract adress | Pending | 🚧 Deploying |
 | 🌙 Midnight Network | Preprod | ✅ Active |
 
 
