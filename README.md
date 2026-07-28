@@ -249,10 +249,8 @@ voxis/
 | 🔗 Contract adress | Pending | 🚧 Deploying |
 | 🌙 Midnight Network | Preprod | ✅ Active |
 
-
-## 🎥 Demo
-
-[![Watch the Demo]((https://drive.google.com/file/d/1_46f0h8Sr9K6FAdResFBvP5joMMsNsZK/view?usp=drive_link))
+## 🎥 Demo Video
+https://drive.google.com/file/d/1_46f0h8Sr9K6FAdResFBvP5joMMsNsZK/view?usp=drive_link
 ---
 
 # 🚀 Getting Started
