@@ -47,19 +47,53 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [connectNotice, setConnectNotice] = useState<string | null>(null);
 
-  const handleConnectWithMode = async (mode: 'metamask' | 'zk') => {
+  const isLaceInstalled = MidnightService.isLaceInstalled();
+  const isMetaMaskInstalled = MidnightService.isMetaMaskInstalled();
+
+  useEffect(() => {
+    // Listen for MetaMask account changes if present
+    if (typeof window !== 'undefined' && (window as any).ethereum?.on) {
+      const handleAccounts = (accounts: string[]) => {
+        if (accounts && accounts.length > 0 && wallet.walletType === 'metamask') {
+          onConnectWallet({
+            ...wallet,
+            isConnected: true,
+            address: accounts[0]
+          });
+        }
+      };
+      (window as any).ethereum.on('accountsChanged', handleAccounts);
+      return () => {
+        if ((window as any).ethereum?.removeListener) {
+          (window as any).ethereum.removeListener('accountsChanged', handleAccounts);
+        }
+      };
+    }
+  }, [wallet, onConnectWallet]);
+
+  const handleConnectWithMode = async (mode: 'lace' | 'metamask' | 'zk') => {
     setIsConnecting(true);
     setConnectNotice(null);
     try {
       const newWallet = await MidnightService.connectWallet(mode);
       onConnectWallet(newWallet);
       setIsWalletModalOpen(false);
+      if (mode === 'lace') {
+        const isInstalled = MidnightService.isLaceInstalled();
+        if (!isInstalled) {
+          setConnectNotice('Lace extension not detected in window.cardano. Connected via Lace Midnight Preprod testnet. Install Lace extension from lace.io for CIP-30 dApp signing.');
+        }
+      } else if (mode === 'metamask') {
+        const isInstalled = MidnightService.isMetaMaskInstalled();
+        if (!isInstalled) {
+          setConnectNotice('MetaMask extension not detected in window.ethereum. Connected via Web3 testnet account. Install MetaMask from metamask.io for browser signing.');
+        }
+      }
     } catch (err: any) {
       console.warn('Wallet connection fallback:', err);
-      // Ensure app NEVER breaks on MetaMask failure
       const fallbackWallet = MidnightService.getInitialWalletState();
       onConnectWallet(fallbackWallet);
-      setConnectNotice('MetaMask connection unavailable in preview iframe. Connected via Voxis ZK Shielded Identity.');
+      setConnectNotice('Wallet connection fallback activated.');
     } finally {
       setIsConnecting(false);
     }
@@ -226,9 +260,16 @@ export const Header: React.FC<HeaderProps> = ({
               {wallet.isConnected ? (
                 <div className="flex items-center space-x-2 bg-zinc-950 text-white pl-3 pr-2 py-1.5 rounded-2xl text-xs shadow-md border border-zinc-800">
                   <div className="flex flex-col text-right">
-                    <span className="font-mono text-zinc-200 font-bold text-[11px]">
-                      {wallet.address?.substring(0, 5)}...{wallet.address?.substring(wallet.address.length - 4)}
-                    </span>
+                    <div className="flex items-center space-x-1.5 justify-end">
+                      {wallet.walletType === 'lace' && (
+                        <span className="px-1.5 py-0.2 text-[8px] font-mono font-bold bg-emerald-500/20 text-emerald-400 rounded">
+                          LACE
+                        </span>
+                      )}
+                      <span className="font-mono text-zinc-200 font-bold text-[11px]">
+                        {wallet.address?.substring(0, 5)}...{wallet.address?.substring(wallet.address.length - 4)}
+                      </span>
+                    </div>
                     <span className="text-[9px] text-emerald-400 font-mono font-medium">
                       {wallet.dustBalance.toLocaleString()} VOX
                     </span>
@@ -681,49 +722,131 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             <div className="space-y-3">
-              {/* MetaMask / EVM Extension Button */}
-              <button
-                type="button"
-                disabled={isConnecting}
-                onClick={() => handleConnectWithMode('metamask')}
-                className="w-full p-4 rounded-2xl border border-zinc-200 hover:border-zinc-400 bg-zinc-50/50 hover:bg-zinc-100/80 text-left transition-all duration-200 flex items-center justify-between group"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 font-extrabold flex items-center justify-center text-xs">
-                    🦊
+              {/* Lace Wallet Button (Midnight / Cardano) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  disabled={isConnecting}
+                  onClick={() => handleConnectWithMode('lace')}
+                  className="w-full p-4 rounded-2xl border-2 border-emerald-600/90 bg-emerald-500/10 hover:bg-emerald-500/20 text-left transition-all duration-200 flex items-center justify-between group shadow-sm cursor-pointer"
+                >
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-zinc-950 text-emerald-400 border border-zinc-800 flex items-center justify-center font-black text-sm shadow-md shrink-0">
+                      🌀
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-extrabold text-sm text-zinc-950">Lace Wallet</span>
+                        <span className="px-2 py-0.2 rounded-full text-[9px] font-mono font-bold bg-emerald-600 text-white">
+                          Midnight / CIP-30
+                        </span>
+                        {isLaceInstalled ? (
+                          <span className="px-1.5 py-0.2 rounded text-[8px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Detected
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 rounded text-[8px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            Extension Needed
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-zinc-600 block mt-0.5">
+                        Connect via official IOG Lace browser extension &amp; Midnight network
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-extrabold text-sm text-zinc-950 block">MetaMask / EVM Extension</span>
-                    <span className="text-xs text-zinc-500 block">Connect directly via browser Web3 provider</span>
+                  {isConnecting ? (
+                    <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin shrink-0" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-950 transition-colors shrink-0" />
+                  )}
+                </button>
+                {!isLaceInstalled && (
+                  <div className="mt-1 text-[10px] text-zinc-500 px-3 flex items-center justify-between font-mono">
+                    <span>Don't have Lace browser extension?</span>
+                    <a
+                      href="https://www.lace.io"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-700 hover:underline font-bold"
+                    >
+                      Install Lace Wallet &rarr;
+                    </a>
                   </div>
-                </div>
-                {isConnecting ? (
-                  <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-950 transition-colors" />
                 )}
-              </button>
+              </div>
+
+              {/* MetaMask / EVM Extension Button */}
+              <div className="relative">
+                <button
+                  type="button"
+                  disabled={isConnecting}
+                  onClick={() => handleConnectWithMode('metamask')}
+                  className="w-full p-4 rounded-2xl border border-zinc-200 hover:border-zinc-300 bg-zinc-50/60 hover:bg-zinc-100/80 text-left transition-all duration-200 flex items-center justify-between group cursor-pointer"
+                >
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 font-extrabold flex items-center justify-center text-base shrink-0">
+                      🦊
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-extrabold text-sm text-zinc-950">MetaMask / Web3</span>
+                        {isMetaMaskInstalled ? (
+                          <span className="px-1.5 py-0.2 rounded text-[8px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Detected
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 rounded text-[8px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            Extension Needed
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-zinc-500 block mt-0.5">Connect via browser Web3 provider</span>
+                    </div>
+                  </div>
+                  {isConnecting ? (
+                    <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin shrink-0" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-950 transition-colors shrink-0" />
+                  )}
+                </button>
+                {!isMetaMaskInstalled && (
+                  <div className="mt-1 text-[10px] text-zinc-500 px-3 flex items-center justify-between font-mono">
+                    <span>Don't have MetaMask installed?</span>
+                    <a
+                      href="https://metamask.io"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-amber-700 hover:underline font-bold"
+                    >
+                      Install MetaMask &rarr;
+                    </a>
+                  </div>
+                )}
+              </div>
 
               {/* Built-in Voxis ZK Shielded Identity Button */}
               <button
                 type="button"
                 disabled={isConnecting}
                 onClick={() => handleConnectWithMode('zk')}
-                className="w-full p-4 rounded-2xl border-2 border-emerald-600/80 bg-emerald-50/40 hover:bg-emerald-50/90 text-left transition-all duration-200 flex items-center justify-between group shadow-2xs"
+                className="w-full p-4 rounded-2xl border border-zinc-200 hover:border-zinc-300 bg-zinc-50/60 hover:bg-zinc-100/80 text-left transition-all duration-200 flex items-center justify-between group cursor-pointer"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                    <Sparkles className="w-5 h-5 text-emerald-300" />
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-zinc-950 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    <Sparkles className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div>
-                    <span className="font-extrabold text-sm text-emerald-950 block flex items-center space-x-1.5">
-                      <span>Voxis ZK Shielded Wallet</span>
-                      <span className="px-2 py-0.2 rounded-full text-[9px] font-mono font-bold bg-emerald-600 text-white">Recommended</span>
-                    </span>
-                    <span className="text-xs text-emerald-800/80 block">Instant deterministic zero-knowledge keypair</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-extrabold text-sm text-zinc-950">Voxis ZK Keypair</span>
+                      <span className="px-2 py-0.2 rounded-full text-[9px] font-mono font-bold bg-zinc-200 text-zinc-800">
+                        In-Memory
+                      </span>
+                    </div>
+                    <span className="text-xs text-zinc-500 block mt-0.5">Instant deterministic zero-knowledge keypair</span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-700 group-hover:text-emerald-950 transition-colors" />
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-950 transition-colors shrink-0" />
               </button>
             </div>
 

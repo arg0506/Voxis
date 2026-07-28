@@ -56,7 +56,7 @@ export default function App() {
       {/* Top Navbar */}
       <Header
         wallet={wallet}
-        onConnectWallet={() => setWallet({ ...wallet, isConnected: true })}
+        onConnectWallet={(updatedWallet) => setWallet(updatedWallet || { ...wallet, isConnected: true })}
         onOpenDeployGuide={() => setIsDeployGuideOpen(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}

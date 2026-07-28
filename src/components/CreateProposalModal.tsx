@@ -32,11 +32,14 @@ export const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
       return;
     }
 
+    const activeWallet = MidnightService.getSavedWallet();
+    const creatorAddress = activeWallet?.address || 'midnight1q84z9x7m22a000888v92k44556677889900aa';
+
     const created = MidnightService.createProposal({
       title: title.trim(),
       description: description.trim(),
       category,
-      creator: 'voxis1q84z9x7...v92k',
+      creator: creatorAddress,
       endsAt: new Date(Date.now() + Number(daysActive) * 86400000).toISOString()
     });
 

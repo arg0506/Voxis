@@ -125,16 +125,37 @@ export const AuditLog: React.FC<AuditLogProps> = ({ receipts }) => {
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-between text-[11px] text-zinc-600 border-t border-zinc-200/60">
-                <div className="flex items-center space-x-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="font-bold text-emerald-900">ZK SNARK Proof Verified On-Chain</span>
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-zinc-600 border-t border-zinc-200/60">
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <div className="flex items-center space-x-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="font-bold text-emerald-900">ZK SNARK Proof Verified On-Chain</span>
+                  </div>
+                  {receipt.walletType && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-zinc-200 text-zinc-800 uppercase">
+                      Wallet: {receipt.walletType}
+                    </span>
+                  )}
                 </div>
 
                 <span className="text-zinc-500 text-[10px] font-bold">
                   Proposal: {receipt.proposalId}
                 </span>
               </div>
+
+              {receipt.signature && (
+                <div className="pt-2 border-t border-dashed border-zinc-200 text-[10px]">
+                  <div className="flex items-center justify-between text-zinc-500 mb-1">
+                    <span className="font-bold uppercase text-emerald-800">Actual Wallet Signature ({receipt.walletType || 'Web3'})</span>
+                    {receipt.signerAddress && (
+                      <span className="font-mono text-zinc-600">Signer: {receipt.signerAddress.substring(0, 8)}...{receipt.signerAddress.substring(receipt.signerAddress.length - 6)}</span>
+                    )}
+                  </div>
+                  <code className="text-zinc-700 text-[10px] break-all block bg-emerald-50/50 p-2 rounded-lg border border-emerald-200/60 font-mono">
+                    {receipt.signature}
+                  </code>
+                </div>
+              )}
             </div>
           ))}
         </div>

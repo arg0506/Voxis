@@ -25,6 +25,10 @@ export interface WalletState {
   network: string;
   dustBalance: number;
   proofServerOnline: boolean;
+  walletType?: 'lace' | 'metamask' | 'zk';
+  walletName?: string;
+  isExtensionInstalled?: boolean;
+  chainId?: string;
 }
 
 export interface ZKProofStep {
@@ -42,6 +46,9 @@ export interface VoteReceipt {
   timestamp: string;
   blockNumber: number;
   proofHex: string;
+  signature?: string;
+  signerAddress?: string;
+  walletType?: string;
 }
 
 export interface PrivacyFeature {

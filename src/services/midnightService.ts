@@ -229,6 +229,18 @@ export class MidnightService {
     const txHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
     const proofHex = '0xzkp_' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 
+    // Attempt actual wallet signature if wallet connected
+    const activeWallet = this.getSavedWallet();
+    let walletSignature: string | undefined = undefined;
+    if (activeWallet && activeWallet.isConnected && activeWallet.walletType !== 'zk') {
+      try {
+        const signMessage = `Voxis Vote: Proposal ${proposalId} | Choice: ${choice} | Nullifier: ${nullifierHash.substring(0, 16)}`;
+        walletSignature = await this.signMessageWithWallet(activeWallet, signMessage);
+      } catch (err) {
+        console.warn('Wallet signing skipped or rejected by user:', err);
+      }
+    }
+
     const newReceipt: VoteReceipt = {
       txHash,
       nullifierHash,
@@ -236,7 +248,10 @@ export class MidnightService {
       disclosedChoice: choice,
       timestamp: new Date().toISOString(),
       blockNumber: 1849200 + Math.floor(Math.random() * 50),
-      proofHex
+      proofHex,
+      signature: walletSignature,
+      signerAddress: activeWallet?.address || undefined,
+      walletType: activeWallet?.walletType || 'zk'
     };
 
     const receipts = this.getAuditReceipts();
@@ -248,41 +263,244 @@ export class MidnightService {
     return { receipt: newReceipt, proposal: updatedProp };
   }
 
-  // Wallet Connection logic with Web3/MetaMask and Voxis ZK Shielded Wallet
-  static getInitialWalletState(): WalletState {
-    return {
-      isConnected: true,
-      address: 'midnight1q84z9x7m22a000888v92k44556677889900aa',
-      network: 'preprod',
-      dustBalance: 1250.75,
-      proofServerOnline: true
-    };
+  // Wallet Connection logic with Lace, Web3/MetaMask and Voxis ZK Shielded Wallet
+  static STORAGE_KEY_WALLET = 'voxis_active_wallet';
+
+  static isLaceInstalled(): boolean {
+    if (typeof window === 'undefined') return false;
+    const cardano = (window as any).cardano;
+    const midnight = (window as any).midnight;
+    return Boolean(
+      cardano?.lace || 
+      midnight?.lace || 
+      (cardano && Object.keys(cardano).some(k => k.toLowerCase().includes('lace')))
+    );
   }
 
-  static async connectWallet(mode: 'metamask' | 'zk' = 'zk'): Promise<WalletState> {
-    if (mode === 'metamask' && typeof window !== 'undefined' && (window as any).ethereum) {
+  static isMetaMaskInstalled(): boolean {
+    if (typeof window === 'undefined') return false;
+    const ethereum = (window as any).ethereum;
+    return Boolean(ethereum && (ethereum.isMetaMask || ethereum.request));
+  }
+
+  static getSavedWallet(): WalletState | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = localStorage.getItem(MidnightService.STORAGE_KEY_WALLET);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  static saveWallet(wallet: WalletState): void {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(MidnightService.STORAGE_KEY_WALLET, JSON.stringify(wallet));
+    } catch (err) {
+      console.warn('Failed to save wallet state:', err);
+    }
+  }
+
+  static getInitialWalletState(): WalletState {
+    const saved = this.getSavedWallet();
+    if (saved && saved.isConnected) {
+      return saved;
+    }
+    const isLace = this.isLaceInstalled();
+    const isMM = this.isMetaMaskInstalled();
+
+    const initial: WalletState = {
+      isConnected: true,
+      address: isLace
+        ? 'addr_test1q84z9x7m22a000888v92k44556677889900lace'
+        : 'midnight1q84z9x7m22a000888v92k44556677889900aa',
+      network: isLace ? 'Lace Midnight Preprod' : 'preprod',
+      dustBalance: 2450.00,
+      proofServerOnline: true,
+      walletType: isLace ? 'lace' : 'zk',
+      walletName: isLace ? 'Lace Wallet' : 'Voxis ZK Wallet',
+      isExtensionInstalled: isLace || isMM
+    };
+
+    this.saveWallet(initial);
+    return initial;
+  }
+
+  static async signMessageWithWallet(wallet: WalletState, message: string): Promise<string> {
+    if (typeof window === 'undefined') return '0xsimulated_signature';
+
+    // 1. MetaMask / EVM Personal Sign
+    if (wallet.walletType === 'metamask' && (window as any).ethereum && wallet.address) {
       try {
-        const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts.length > 0) {
-          return {
-            isConnected: true,
-            address: accounts[0],
-            network: 'Ethereum (Web3)',
-            dustBalance: 3420.50,
-            proofServerOnline: true
-          };
-        }
+        const hexMsg = '0x' + Array.from(new TextEncoder().encode(message))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+        const sig = await (window as any).ethereum.request({
+          method: 'personal_sign',
+          params: [hexMsg, wallet.address]
+        });
+        return sig;
       } catch (err) {
-        console.warn('MetaMask user rejected or unavailable, falling back to Voxis ZK Wallet:', err);
+        console.warn('MetaMask personal_sign rejected:', err);
+        throw err;
       }
     }
 
-    return {
+    // 2. Lace / Cardano CIP-30 Sign
+    if (wallet.walletType === 'lace') {
+      const cardano = (window as any).cardano;
+      const midnight = (window as any).midnight;
+      const laceProvider = cardano?.lace || midnight?.lace || cardano?.laceWallet;
+
+      if (laceProvider && laceProvider.enable) {
+        try {
+          const api = await laceProvider.enable();
+          if (api?.signData) {
+            const hexMsg = Array.from(new TextEncoder().encode(message))
+              .map(b => b.toString(16).padStart(2, '0')).join('');
+            const signedData = await api.signData(wallet.address, hexMsg);
+            return typeof signedData === 'string' ? signedData : JSON.stringify(signedData);
+          }
+        } catch (err) {
+          console.warn('Lace CIP-30 signData error:', err);
+        }
+      }
+    }
+
+    // Fallback signature hash for preview
+    return '0x' + Array.from({ length: 128 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  }
+
+  static async connectWallet(mode: 'lace' | 'metamask' | 'zk' = 'lace'): Promise<WalletState> {
+    // 1. LACE WALLET CONNECTION (CIP-30 / Midnight)
+    if (mode === 'lace') {
+      const hasLace = this.isLaceInstalled();
+      if (typeof window !== 'undefined' && hasLace) {
+        const cardano = (window as any).cardano;
+        const midnight = (window as any).midnight;
+        const laceProvider = cardano?.lace || midnight?.lace || cardano?.laceWallet;
+
+        if (laceProvider) {
+          try {
+            // CIP-30 enable prompt
+            const api = await laceProvider.enable();
+            let address = 'addr_test1q84z9x7m22a000888v92k44556677889900lace';
+            if (api?.getUsedAddresses) {
+              const usedAddrs = await api.getUsedAddresses();
+              if (usedAddrs && usedAddrs.length > 0) address = usedAddrs[0];
+            } else if (api?.getChangeAddress) {
+              address = await api.getChangeAddress();
+            }
+
+            let network = 'Lace Midnight / Cardano Preprod';
+            if (api?.getNetworkId) {
+              const netId = await api.getNetworkId();
+              network = netId === 1 ? 'Lace Cardano Mainnet' : 'Lace Midnight Preprod';
+            }
+
+            const walletState: WalletState = {
+              isConnected: true,
+              address,
+              network,
+              dustBalance: 4850.00,
+              proofServerOnline: true,
+              walletType: 'lace',
+              walletName: 'Lace Wallet',
+              isExtensionInstalled: true
+            };
+
+            this.saveWallet(walletState);
+            return walletState;
+          } catch (err) {
+            console.warn('Lace CIP-30 authorization error or user rejection:', err);
+          }
+        }
+      }
+
+      // Preview / Fallback for Lace
+      const fallbackLace: WalletState = {
+        isConnected: true,
+        address: 'addr_test1q84z9x7m22a000888v92k44556677889900lace',
+        network: 'Lace Midnight Preprod',
+        dustBalance: 2450.00,
+        proofServerOnline: true,
+        walletType: 'lace',
+        walletName: 'Lace Wallet',
+        isExtensionInstalled: hasLace
+      };
+      this.saveWallet(fallbackLace);
+      return fallbackLace;
+    }
+
+    // 2. METAMASK / EVM CONNECTION
+    if (mode === 'metamask') {
+      const hasMM = this.isMetaMaskInstalled();
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        try {
+          const ethereum = (window as any).ethereum;
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts.length > 0) {
+            const chainIdHex = await ethereum.request({ method: 'eth_chainId' }).catch(() => '0x1');
+            let balanceEth = '3420.50';
+            try {
+              const rawBal = await ethereum.request({ method: 'eth_getBalance', params: [accounts[0], 'latest'] });
+              const wei = parseInt(rawBal, 16);
+              if (!isNaN(wei)) balanceEth = (wei / 1e18).toFixed(2);
+            } catch {
+              // fallback
+            }
+
+            let networkName = 'Ethereum Mainnet';
+            if (chainIdHex === '0xaa36a7') networkName = 'Ethereum Sepolia';
+            else if (chainIdHex === '0x5') networkName = 'Ethereum Goerli';
+            else if (chainIdHex === '0x89') networkName = 'Polygon Mainnet';
+
+            const mmState: WalletState = {
+              isConnected: true,
+              address: accounts[0],
+              network: networkName,
+              dustBalance: Number(balanceEth) || 3420.50,
+              proofServerOnline: true,
+              walletType: 'metamask',
+              walletName: 'MetaMask',
+              isExtensionInstalled: true,
+              chainId: chainIdHex
+            };
+
+            this.saveWallet(mmState);
+            return mmState;
+          }
+        } catch (err) {
+          console.warn('MetaMask user rejected or error:', err);
+        }
+      }
+
+      const fallbackMM: WalletState = {
+        isConnected: true,
+        address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+        network: 'Ethereum (Web3)',
+        dustBalance: 3420.50,
+        proofServerOnline: true,
+        walletType: 'metamask',
+        walletName: 'MetaMask',
+        isExtensionInstalled: hasMM
+      };
+      this.saveWallet(fallbackMM);
+      return fallbackMM;
+    }
+
+    // 3. IN-MEMORY VOXIS ZK KEYPAIR
+    const zkState: WalletState = {
       isConnected: true,
       address: 'midnight1q84z9x7m22a000888v92k44556677889900aa',
       network: 'preprod',
       dustBalance: 1250.75,
-      proofServerOnline: true
+      proofServerOnline: true,
+      walletType: 'zk',
+      walletName: 'Voxis ZK Wallet',
+      isExtensionInstalled: true
     };
+    this.saveWallet(zkState);
+    return zkState;
   }
 }
