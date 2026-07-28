@@ -316,6 +316,12 @@ midnight-proof-server
 | Proof Server | Local Docker |
 | Wallet | Lace Midnight |
 
+
+
+## 🎥 Demo Video
+
+(https://drive.google.com/file/d/1_46f0h8Sr9K6FAdResFBvP5joMMsNsZK/view?usp=drive_link)
+
 ---
 
 # 📸 Screenshots
