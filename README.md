@@ -251,7 +251,19 @@ voxis/
 
 ## 🎥 Demo
 
-[![Watch the Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/maxresdefault.jpg)](https://drive.google.com/file/d/1_46f0h8Sr9K6FAdResFBvP5joMMsNsZK/view?usp=drive_link)
+## 🎥 Demo
+
+<p align="center">
+  <a href="https://youtu.be/YOUR_VIDEO_ID">
+    <img src="./assets/demo.gif" width="900" alt="Demo Preview">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://drive.google.com/file/d/1_46f0h8Sr9K6FAdResFBvP5joMMsNsZK/view?usp=drive_link">
+    <img src="">
+  </a>
+</p>
 ---
 
 # 🚀 Getting Started
